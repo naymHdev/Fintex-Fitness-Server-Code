@@ -1,21 +1,37 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const app = express();
-require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 
 //// Middle Ware \\\\\
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:5174"],
+  origin: ["http://localhost:5173"],
   credentials: true,
   optionSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
+
+const verifyToken = async (req, res, next) => {
+  const token = req.cookies?.token;
+  console.log(token);
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      console.log(err);
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
 
 const uri = `mongodb+srv://${process.env.USER_ID_DB}:${process.env.USER_KEY_DB}@firstpractice.poejscf.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -37,69 +53,111 @@ async function run() {
     const testimonialsCollection = client.db("fitnexFitness").collection("testimonials");
     const subscribersCollection = client.db("fitnexFitness").collection("subscribers");
     const usersCollection = client.db("fitnexFitness").collection("users");
+    const trainersCollection = client.db("fitnexFitness").collection("trainers");
+    const imagesCollection = client.db("fitnexFitness").collection("images");
+    const classesCollection = client.db("fitnexFitness").collection("classes");
 
+    //Trainer add classes
+    app.get("/classes", async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    });
 
-      ////// User Data save DB
-      app.put("/users/:email", async (req, res) => {
-        const email = req.params.email;
-        const user = req.body;
-        // console.log('object___________>', user, "====Email", email);
-        const query = { email: email };
-        const options = { upsert: true };
-        const isExist = await usersCollection.findOne(query);
-        console.log("User found?----->", isExist);
-        if (isExist) return res.send(isExist);
-        const result = await usersCollection.updateOne(
-          query,
-          {
-            $set: { ...user, timestamp: Date.now() },
-          },
-          options
-        );
-        res.send(result);
+    app.post("/classes", verifyToken, async (req, res) => {
+      const info = req.body;
+      const result = await classesCollection.insertOne(info);
+      res.send(result);
+    });
+
+    // Gallery API
+    app.get("/images", async (req, res) => {
+      const result = await imagesCollection.find().toArray();
+      res.send(result);
+    });
+
+    /// Trainer Section
+    app.post("/trainers", async (req, res) => {
+      const items = req.body;
+      const result = await trainersCollection.insertOne(items);
+      res.send(result);
+    });
+
+    app.get("/trainers", async (req, res) => {
+      const result = await trainersCollection.find().toArray();
+      res.send(result);
+    });
+
+    ////// User Data save DB
+    app.get("/user", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+    app.put("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      const user = req.body;
+      // console.log('object___________>', user, "====Email", email);
+      const query = { email: email };
+      const options = { upsert: true };
+      const isExist = await usersCollection.findOne(query);
+      // console.log("User found?----->", isExist);
+      if (isExist) return res.send(isExist);
+      const result = await usersCollection.updateOne(
+        query,
+        {
+          $set: { ...user, timestamp: Date.now() },
+        },
+        options
+      );
+      res.send(result);
+    });
+
+    // Get user role
+    app.get("/user/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log("----User Email", email);
+      const result = await usersCollection.findOne({ email });
+      res.send(result);
+    });
+
+    // auth secure related api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      // console.log("I need a new jwt", user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "365d",
       });
-  
-      // Get user role
-      app.get("/user/:email", async (req, res) => {
-        const email = req.params.email;
-        const result = await usersCollection.findOne({ email });
-        res.send(result);
-      });
-  
-      // auth secure related api
-      app.post("/jwt", async (req, res) => {
-        const user = req.body;
-        // console.log("I need a new jwt", user);
-        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
-          expiresIn: "365d",
-        });
-        // console.log('=======TOKEN========',token);
+      // console.log('=======TOKEN========',token);
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
+
+    //JWT  Logout
+    app.get("/logout", async (req, res) => {
+      try {
         res
-          .cookie("token", token, {
-            httpOnly: true,
+          .clearCookie("token", {
+            maxAge: 0,
             secure: process.env.NODE_ENV === "production",
             sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
           })
           .send({ success: true });
-      });
-  
-      //JWT  Logout
-      app.get("/logout", async (req, res) => {
-        try {
-          res
-            .clearCookie("token", {
-              maxAge: 0,
-              secure: process.env.NODE_ENV === "production",
-              sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
-            })
-            .send({ success: true });
-          // console.log("Logout successful");
-        } catch (err) {
-          res.status(500).send(err);
-        }
-      });
+        // console.log("Logout successful");
+      } catch (err) {
+        res.status(500).send(err);
+      }
+    });
 
     // Newsletters Post any user
+    app.get("/newsletters", async (req, res) => {
+      const result = await subscribersCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/newsletters", async (req, res) => {
       const news = req.body;
       console.log(news);
