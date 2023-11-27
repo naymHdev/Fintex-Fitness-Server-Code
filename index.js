@@ -56,7 +56,13 @@ async function run() {
     const trainersCollection = client.db("fitnexFitness").collection("trainers");
     const imagesCollection = client.db("fitnexFitness").collection("images");
     const classesCollection = client.db("fitnexFitness").collection("classes");
+    const forumsCollection = client.db("fitnexFitness").collection("forums");
 
+    // Forums Post && Gets
+    app.get("/forums", async (req, res) => {
+      const result = await forumsCollection.find().toArray();
+      res.send(result);
+    });
     //Trainer add classes
     app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
@@ -69,16 +75,11 @@ async function run() {
       res.send(result);
     });
 
-    // Gallery API
-    app.get("/images", async (req, res) => {
-      const result = await imagesCollection.find().toArray();
-      res.send(result);
-    });
-
     /// Trainer Section
     app.post("/trainers", async (req, res) => {
       const items = req.body;
       const result = await trainersCollection.insertOne(items);
+      // console.log(88, items, result);
       res.send(result);
     });
 
@@ -88,6 +89,21 @@ async function run() {
     });
 
     ////// User Data save DB
+    app.patch("/user/:email", async (req, res) => {
+      const menu = req.body;
+      const id = req.params.email;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          displayName: menu.displayName,
+          email: menu.email,
+          photoURL: menu.photoURL,
+        },
+      };
+      const result = await menuCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     app.get("/user", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
