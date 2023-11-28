@@ -114,7 +114,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/trainers", verifyToken, async (req, res) => {
+    app.get("/trainers/trainer", verifyToken, async (req, res) => {
       const result = await trainersCollection.find().toArray();
       res.send(result);
     });
