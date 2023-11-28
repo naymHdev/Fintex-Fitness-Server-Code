@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 
 //// Middle Ware \\\\\
 const corsOptions = {
-  origin: ["http://localhost:5173"],
+  origin: ["http://localhost:5173", "https://fintex-fitness.netlify.app"],
   credentials: true,
   optionSuccessStatus: 200,
 };
@@ -54,17 +54,23 @@ async function run() {
     const subscribersCollection = client.db("fitnexFitness").collection("subscribers");
     const usersCollection = client.db("fitnexFitness").collection("users");
     const trainersCollection = client.db("fitnexFitness").collection("trainers");
-    const imagesCollection = client.db("fitnexFitness").collection("images");
     const classesCollection = client.db("fitnexFitness").collection("classes");
     const forumsCollection = client.db("fitnexFitness").collection("forums");
 
     // Forums Post && Gets
-    app.get("/forums", async (req, res) => {
+    app.get("/forums", verifyToken, async (req, res) => {
       const result = await forumsCollection.find().toArray();
       res.send(result);
     });
+
+    app.post("/forums", verifyToken, async (req, res) => {
+      const forum = req.body;
+      const result = await forumsCollection.insertOne(forum);
+      res.send(result);
+    });
+
     //Trainer add classes
-    app.get("/classes", async (req, res) => {
+    app.get("/classes", verifyToken, async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
@@ -76,14 +82,14 @@ async function run() {
     });
 
     /// Trainer Section
-    app.post("/trainers", async (req, res) => {
+    app.post("/trainers", verifyToken, async (req, res) => {
       const items = req.body;
       const result = await trainersCollection.insertOne(items);
       // console.log(88, items, result);
       res.send(result);
     });
 
-    app.get("/trainers", async (req, res) => {
+    app.get("/trainers", verifyToken, async (req, res) => {
       const result = await trainersCollection.find().toArray();
       res.send(result);
     });
@@ -111,11 +117,9 @@ async function run() {
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
-      // console.log('object___________>', user, "====Email", email);
       const query = { email: email };
       const options = { upsert: true };
       const isExist = await usersCollection.findOne(query);
-      // console.log("User found?----->", isExist);
       if (isExist) return res.send(isExist);
       const result = await usersCollection.updateOne(
         query,
@@ -130,7 +134,6 @@ async function run() {
     // Get user role
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
-      // console.log("----User Email", email);
       const result = await usersCollection.findOne({ email });
       res.send(result);
     });
@@ -138,11 +141,9 @@ async function run() {
     // auth secure related api
     app.post("/jwt", async (req, res) => {
       const user = req.body;
-      // console.log("I need a new jwt", user);
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: "365d",
       });
-      // console.log('=======TOKEN========',token);
       res
         .cookie("token", token, {
           httpOnly: true,
@@ -162,7 +163,6 @@ async function run() {
             sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
           })
           .send({ success: true });
-        // console.log("Logout successful");
       } catch (err) {
         res.status(500).send(err);
       }
@@ -176,7 +176,7 @@ async function run() {
 
     app.post("/newsletters", async (req, res) => {
       const news = req.body;
-      console.log(news);
+      // console.log(news);
       const result = await subscribersCollection.insertOne(news);
       res.send(result);
     });
@@ -193,7 +193,7 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
