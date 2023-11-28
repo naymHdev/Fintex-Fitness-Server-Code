@@ -1,7 +1,7 @@
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
@@ -78,6 +78,31 @@ async function run() {
     app.post("/classes", verifyToken, async (req, res) => {
       const info = req.body;
       const result = await classesCollection.insertOne(info);
+      res.send(result);
+    });
+
+    //// ==========================================> Trainer management ][
+    //// ==========================================> Trainer management ][
+
+    // User To Trainer update
+      app.patch("/trainers/trainer/:id", async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            role: "trainer",
+          },
+        };
+        const result = await trainersCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      });
+      
+      // Applied Trainer delete
+    app.delete("/trainers/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log('Delete====Id',id);
+      const query = { _id: new ObjectId(id) };
+      const result = await trainersCollection.deleteOne(query);
       res.send(result);
     });
 
