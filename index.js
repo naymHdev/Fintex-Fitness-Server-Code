@@ -77,7 +77,7 @@ async function run() {
           $in: payment.cartIds.map((id) => new ObjectId(id)),
         },
       };
-      const deleteResult = await cartsCollection.deleteMany(query);
+      const deleteResult = await paymentsCollection.deleteMany(query);
       res.send({ paymentResult, deleteResult });
     });
 
@@ -201,6 +201,22 @@ async function run() {
     app.get("/user/:email", async (req, res) => {
       const email = req.params.email;
       const result = await usersCollection.findOne({ email });
+      res.send(result);
+    });
+
+    app.patch("/user/:id", async (req, res) => {
+      const menu = req.body;
+      const id = req.params.id;
+      console.log('==========USER',menu, id);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          displayName: menu.displayName,
+          email: menu.email,
+          photoURL: menu.photoURL,
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
 
