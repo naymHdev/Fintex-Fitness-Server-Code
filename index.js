@@ -5,6 +5,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const cookieParser = require("cookie-parser");
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_PAYMENT_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 //// Middle Ware \\\\\
@@ -19,7 +20,7 @@ app.use(cookieParser());
 
 const verifyToken = async (req, res, next) => {
   const token = req.cookies?.token;
-  console.log(token);
+  // console.log(token);
   if (!token) {
     return res.status(401).send({ message: "unauthorized access" });
   }
@@ -56,9 +57,48 @@ async function run() {
     const trainersCollection = client.db("fitnexFitness").collection("trainers");
     const classesCollection = client.db("fitnexFitness").collection("classes");
     const forumsCollection = client.db("fitnexFitness").collection("forums");
+    const paymentsCollection = client.db("fitnexFitness").collection("payments");
+
+    ///////// Stripe Payment Start \\\\\\\\
+
+    app.get("/payments/:email", async (req, res) => {
+      const query = { email: req.params.email };
+      const history = await paymentsCollection.find(query).toArray();
+      res.send(history);
+    });
+
+    // User Payment History Post server
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentsCollection.insertOne(payment);
+
+      const query = {
+        _id: {
+          $in: payment.cartIds.map((id) => new ObjectId(id)),
+        },
+      };
+      const deleteResult = await cartsCollection.deleteMany(query);
+      res.send({ paymentResult, deleteResult });
+    });
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      console.log('object======================>', amount);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
 
     // Forums Post && Gets
-    app.get("/forums", verifyToken, async (req, res) => {
+    app.get("/forums", async (req, res) => {
       const result = await forumsCollection.find().toArray();
       res.send(result);
     });
@@ -85,22 +125,23 @@ async function run() {
     //// ==========================================> Trainer management ][
 
     // User To Trainer update
-      app.patch("/trainers/trainer/:id", async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            role: "trainer",
-          },
-        };
-        const result = await trainersCollection.updateOne(filter, updateDoc);
-        res.send(result);
-      });
-      
-      // Applied Trainer delete
+    app.patch("/trainers/trainer/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "trainer",
+          payment: "pending",
+        },
+      };
+      const result = await trainersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // Applied Trainer delete
     app.delete("/trainers/:id", async (req, res) => {
       const id = req.params.id;
-      console.log('Delete====Id',id);
+      // console.log('Delete====Id',id);
       const query = { _id: new ObjectId(id) };
       const result = await trainersCollection.deleteOne(query);
       res.send(result);
