@@ -48,7 +48,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
 
     const featuredCollection = client.db("fitnexFitness").collection("featured");
     const testimonialsCollection = client.db("fitnexFitness").collection("testimonials");
@@ -121,9 +121,7 @@ async function run() {
       res.send(result);
     });
 
-    //// ==========================================> Trainer management ][
-    //// ==========================================> Trainer management ][
-
+    //// ==========================================> Trainer management
     // User To Trainer update
     app.patch("/trainers/trainer/:id", async (req, res) => {
       const id = req.params.id;
@@ -135,6 +133,7 @@ async function run() {
         },
       };
       const result = await trainersCollection.updateOne(filter, updateDoc);
+      console.log(result);
       res.send(result);
     });
 
@@ -160,7 +159,26 @@ async function run() {
       res.send(result);
     });
 
-    ////// User Data save DB
+    ////// User Data save DB////////////////////
+    // User Collection
+
+    app.get('/user/trainer', async(req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.patch("/user/trainer/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "trainer",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     app.patch("/user/:email", async (req, res) => {
       const menu = req.body;
       const id = req.params.email;
