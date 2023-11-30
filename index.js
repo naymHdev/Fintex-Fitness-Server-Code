@@ -84,7 +84,7 @@ async function run() {
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
-      console.log('object======================>', amount);
+      console.log("object======================>", amount);
 
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
@@ -160,13 +160,16 @@ async function run() {
     });
 
     ////// User Data save DB////////////////////
-    // User Collection
-
-    app.get('/user/trainer', async(req, res) => {
-      const result = await usersCollection.find().toArray();
+    //Appiled Trainer Delete
+    app.delete("/user/trainer/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log('Delete====Id',id);
+      const query = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(query);
       res.send(result);
-    })
+    });
 
+    // User Collection
     app.patch("/user/trainer/:id", async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
@@ -179,25 +182,27 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/user/:email", async (req, res) => {
-      const menu = req.body;
-      const id = req.params.email;
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          displayName: menu.displayName,
-          email: menu.email,
-          photoURL: menu.photoURL,
-        },
-      };
-      const result = await menuCollection.updateOne(filter, updateDoc);
-      res.send(result);
+    app.get("/user/trainer/:email", verifyToken, async (req, res) => {
+      const email = req?.params?.email;
+      if (email !== req?.decoded?.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
+
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      let admin = false;
+      if (user) {
+        admin = user?.role === "admin";
+      }
+      res.send({ admin });
     });
 
     app.get("/user", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
+    ////// users Updated //////
+    ///////////////////////////////
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
       const user = req.body;
@@ -225,7 +230,7 @@ async function run() {
     app.patch("/user/:id", async (req, res) => {
       const menu = req.body;
       const id = req.params.id;
-      console.log('==========USER',menu, id);
+      console.log("==========USER", menu, id);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
