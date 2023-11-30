@@ -48,7 +48,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const featuredCollection = client.db("fitnexFitness").collection("featured");
     const testimonialsCollection = client.db("fitnexFitness").collection("testimonials");
@@ -176,6 +176,7 @@ async function run() {
       const updateDoc = {
         $set: {
           role: "trainer",
+          payment: "pending",
         },
       };
       const result = await usersCollection.updateOne(filter, updateDoc);
@@ -305,7 +306,7 @@ async function run() {
     // await client.close();
   }
 }
-run().catch(console.dir);
+// run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("Hello Fitnex-Fitness!");
