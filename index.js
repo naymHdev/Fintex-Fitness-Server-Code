@@ -48,7 +48,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
 
     const featuredCollection = client.db("fitnexFitness").collection("featured");
     const testimonialsCollection = client.db("fitnexFitness").collection("testimonials");
@@ -170,9 +170,9 @@ async function run() {
     });
 
     // User Collection
-    app.patch("/user/trainer/:id", async (req, res) => {
-      const id = req.params.id;
-      const filter = { _id: new ObjectId(id) };
+    app.patch("/user/trainer/:email", async (req, res) => {
+      const email = req.params.email;
+      const filter = { email: email };
       const updateDoc = {
         $set: {
           role: "trainer",
@@ -182,24 +182,39 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+    
 
     app.get("/user/trainer/:email", verifyToken, async (req, res) => {
       const email = req?.params?.email;
-      if (email !== req?.decoded?.email) {
-        return res.status(403).send({ message: "forbidden access" });
-      }
-
+      // if (email !== req?.decoded?.email) {
+      //   return res.status(403).send({ message: "forbidden access" });
+      // }
+      
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      let admin = false;
+      console.log(user);
+      let trainer = false;
       if (user) {
-        admin = user?.role === "admin";
+        trainer = user?.role === "trainer";
       }
-      res.send({ admin });
+      console.log({trainer});
+      res.send({ trainer });
     });
 
     app.get("/user", async (req, res) => {
       const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
+    /// Roles Define
+    app.get("/user/roles", async (req, res) => {
+      const result = await usersCollection.findOne();
+      res.send(result);
+    });
+
+    app.post("/user", async (req, res) => {
+      const info = req.body;
+      const result = await usersCollection.insertOne(info);
       res.send(result);
     });
     ////// users Updated //////
@@ -299,14 +314,14 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
+    await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
   }
 }
-// run().catch(console.dir);
+run().catch(console.dir);
 
 app.get("/", (req, res) => {
   res.send("Hello Fitnex-Fitness!");
