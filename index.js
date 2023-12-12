@@ -48,7 +48,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    await client.connect();
 
     const featuredCollection = client.db("fitnexFitness").collection("featured");
     const testimonialsCollection = client.db("fitnexFitness").collection("testimonials");
@@ -58,6 +58,19 @@ async function run() {
     const classesCollection = client.db("fitnexFitness").collection("classes");
     const forumsCollection = client.db("fitnexFitness").collection("forums");
     const paymentsCollection = client.db("fitnexFitness").collection("payments");
+    const challengesCollection = client.db("fitnexFitness").collection("challenge");
+
+    ////////// User challenges \\\\\\\
+    app.post("/challenge", verifyToken, async (req, res) => {
+      const forum = req.body;
+      const result = await challengesCollection.insertOne(forum);
+      res.send(result);
+    });
+
+    app.get("/challenge", verifyToken, async (req, res) => {
+      const result = await challengesCollection.find().toArray();
+      res.send(result);
+    });
 
     ///////// Stripe Payment Start \\\\\\\\
 
@@ -182,14 +195,13 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    
 
     app.get("/user/trainer/:email", verifyToken, async (req, res) => {
       const email = req?.params?.email;
       // if (email !== req?.decoded?.email) {
       //   return res.status(403).send({ message: "forbidden access" });
       // }
-      
+
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       console.log(user);
@@ -197,7 +209,7 @@ async function run() {
       if (user) {
         trainer = user?.role === "trainer";
       }
-      console.log({trainer});
+      console.log({ trainer });
       res.send({ trainer });
     });
 
@@ -315,7 +327,7 @@ async function run() {
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log("Pinged your deployment. You successfully connected to MongoDB! 🔥");
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -324,9 +336,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get("/", (req, res) => {
-  res.send("Hello Fitnex-Fitness!");
+  res.send("Hello Fitnex-Fitness!🔥");
 });
 
 app.listen(port, () => {
-  console.log(`Fitness app Running own port ${port}`);
+  console.log(`Fitness app Running own port ${port} 🔥`);
 });
