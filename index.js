@@ -50,24 +50,36 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const featuredCollection = client.db("fitnexFitness").collection("featured");
-    const testimonialsCollection = client.db("fitnexFitness").collection("testimonials");
-    const subscribersCollection = client.db("fitnexFitness").collection("subscribers");
+    const featuredCollection = client
+      .db("fitnexFitness")
+      .collection("featured");
+    const testimonialsCollection = client
+      .db("fitnexFitness")
+      .collection("testimonials");
+    const subscribersCollection = client
+      .db("fitnexFitness")
+      .collection("subscribers");
     const usersCollection = client.db("fitnexFitness").collection("users");
-    const trainersCollection = client.db("fitnexFitness").collection("trainers");
+    const trainersCollection = client
+      .db("fitnexFitness")
+      .collection("trainers");
     const classesCollection = client.db("fitnexFitness").collection("classes");
     const forumsCollection = client.db("fitnexFitness").collection("forums");
-    const paymentsCollection = client.db("fitnexFitness").collection("payments");
-    const challengesCollection = client.db("fitnexFitness").collection("challenge");
+    const paymentsCollection = client
+      .db("fitnexFitness")
+      .collection("payments");
+    const challengesCollection = client
+      .db("fitnexFitness")
+      .collection("challenge");
 
     ////////// User challenges \\\\\\\
-    app.post("/challenge", verifyToken, async (req, res) => {
+    app.post("/challenge", async (req, res) => {
       const forum = req.body;
       const result = await challengesCollection.insertOne(forum);
       res.send(result);
     });
 
-    app.get("/challenge", verifyToken, async (req, res) => {
+    app.get("/challenge", async (req, res) => {
       const result = await challengesCollection.find().toArray();
       res.send(result);
     });
@@ -97,8 +109,6 @@ async function run() {
     app.post("/create-payment-intent", async (req, res) => {
       const { price } = req.body;
       const amount = parseInt(price * 100);
-      console.log("object======================>", amount);
-
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
@@ -116,19 +126,19 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/forums", verifyToken, async (req, res) => {
+    app.post("/forums", async (req, res) => {
       const forum = req.body;
       const result = await forumsCollection.insertOne(forum);
       res.send(result);
     });
 
     //Trainer add classes
-    app.get("/classes", verifyToken, async (req, res) => {
+    app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
       res.send(result);
     });
 
-    app.post("/classes", verifyToken, async (req, res) => {
+    app.post("/classes", async (req, res) => {
       const info = req.body;
       const result = await classesCollection.insertOne(info);
       res.send(result);
@@ -146,28 +156,26 @@ async function run() {
         },
       };
       const result = await trainersCollection.updateOne(filter, updateDoc);
-      console.log(result);
       res.send(result);
     });
 
     // Applied Trainer delete
     app.delete("/trainers/:id", async (req, res) => {
       const id = req.params.id;
-      // console.log('Delete====Id',id);
       const query = { _id: new ObjectId(id) };
       const result = await trainersCollection.deleteOne(query);
       res.send(result);
     });
 
     /// Trainer Section
-    app.post("/trainers", verifyToken, async (req, res) => {
+    app.post("/trainers", async (req, res) => {
       const items = req.body;
       const result = await trainersCollection.insertOne(items);
       // console.log(88, items, result);
       res.send(result);
     });
 
-    app.get("/trainers/trainer", verifyToken, async (req, res) => {
+    app.get("/trainers/trainer", async (req, res) => {
       const result = await trainersCollection.find().toArray();
       res.send(result);
     });
@@ -176,7 +184,6 @@ async function run() {
     //Appiled Trainer Delete
     app.delete("/user/trainer/:id", async (req, res) => {
       const id = req.params.id;
-      // console.log('Delete====Id',id);
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
       res.send(result);
@@ -196,20 +203,14 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/user/trainer/:email", verifyToken, async (req, res) => {
+    app.get("/user/trainer/:email", async (req, res) => {
       const email = req?.params?.email;
-      // if (email !== req?.decoded?.email) {
-      //   return res.status(403).send({ message: "forbidden access" });
-      // }
-
       const query = { email: email };
       const user = await usersCollection.findOne(query);
-      console.log(user);
       let trainer = false;
       if (user) {
         trainer = user?.role === "trainer";
       }
-      console.log({ trainer });
       res.send({ trainer });
     });
 
@@ -258,7 +259,6 @@ async function run() {
     app.patch("/user/:id", async (req, res) => {
       const menu = req.body;
       const id = req.params.id;
-      console.log("==========USER", menu, id);
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
@@ -309,7 +309,6 @@ async function run() {
 
     app.post("/newsletters", async (req, res) => {
       const news = req.body;
-      // console.log(news);
       const result = await subscribersCollection.insertOne(news);
       res.send(result);
     });
@@ -327,7 +326,9 @@ async function run() {
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB! 🔥");
+    console.log(
+      "Pinged your deployment. You successfully connected to MongoDB! 🔥"
+    );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
