@@ -120,7 +120,13 @@ async function run() {
       });
     });
 
-    // Forums Post && Gets
+    // Forums Post && Gets and delete update
+    app.delete("/forums/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await forumsCollection.deleteOne(query);
+      res.send(result);
+    });
     app.get("/forums", async (req, res) => {
       const result = await forumsCollection.find().toArray();
       res.send(result);
