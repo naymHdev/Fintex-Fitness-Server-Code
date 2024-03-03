@@ -177,7 +177,6 @@ async function run() {
     app.post("/trainers", async (req, res) => {
       const items = req.body;
       const result = await trainersCollection.insertOne(items);
-      // console.log(88, items, result);
       res.send(result);
     });
 
