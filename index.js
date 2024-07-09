@@ -10,7 +10,11 @@ const port = process.env.PORT || 5000;
 
 //// Middle Ware \\\\\
 const corsOptions = {
-  origin: ["http://localhost:5173", "https://fintex-fitness.netlify.app"],
+  origin: [
+    "http://localhost:5173",
+    "https://fintex-fitness.netlify.app",
+    "https://fintex-fitness-client-code.vercel.app",
+  ],
   credentials: true,
   optionSuccessStatus: 200,
 };
