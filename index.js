@@ -18,21 +18,21 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
-const verifyToken = async (req, res, next) => {
-  const token = req.cookies?.token;
-  // console.log(token);
-  if (!token) {
-    return res.status(401).send({ message: "unauthorized access" });
-  }
-  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-    if (err) {
-      console.log(err);
-      return res.status(401).send({ message: "unauthorized access" });
-    }
-    req.user = decoded;
-    next();
-  });
-};
+// const verifyToken = async (req, res, next) => {
+//   const token = req.cookies?.token;
+//   // console.log(token);
+//   if (!token) {
+//     return res.status(401).send({ message: "unauthorized access" });
+//   }
+//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+//     if (err) {
+//       console.log(err);
+//       return res.status(401).send({ message: "unauthorized access" });
+//     }
+//     req.user = decoded;
+//     next();
+//   });
+// };
 
 const uri = `mongodb+srv://${process.env.USER_ID_DB}:${process.env.USER_KEY_DB}@firstpractice.poejscf.mongodb.net/?retryWrites=true&w=majority`;
 
